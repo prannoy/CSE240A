@@ -38,10 +38,11 @@ int verbose;
 //
 //TODO: Add your own Branch Predictor data structures here
 //
-int* BHR;           // array to keep track of global t/nt
+int* BHT_index;     // array to keep track of where addr goes to
 int* BHT_global;    // 2^n array to keep track of global t/nt
 int* BHT_local;     // 2^n array to keep track of local t/nt
-int* chooser;  // keeps track of chooser for each addr
+int* chooser;       // keeps track of chooser for each addr
+int G_hist;         // keeps track of global history
 
 //------------------------------------//
 //        Predictor Functions         //
@@ -58,14 +59,15 @@ init_predictor()
 
   // the 'ghistoryBits' will be used to size the global and choice predictors
   int global_size = pow(2, ghistoryBits);
+  G_hist = 0;
   BHT_global = (int*)malloc(sizeof(int) * global_size);
   chooser = (int*)malloc(sizeof(int) * global_size);
   
   // the 'lhistoryBits' and 'pcIndexBits' will be used to size the local predictor.
   int local_size = pow(2, lhistoryBits);
-  int BHR_size = pow(2, pcIndexBits);
+  int BHT_size = pow(2, pcIndexBits);
   BHT_local = (int*)malloc(sizeof(int) * local_size);
-  BHR = (int*)malloc(sizeof(int) * BHR_size);
+  BHT_index = (int*)malloc(sizeof(int) * BHT_size);
   
   // All 2-bit predictors should be initialized to WN (Weakly Not Taken).
   for (int i = 0; i < global_size; i++){
@@ -76,33 +78,19 @@ init_predictor()
     BHT_global[i] = WN;
   }
 
-  /*
-  int mem_size = pow(2, ghistoryBits);
-  chooser_tour = (int*)malloc(sizeof(int) * mem_size);
-  printf("%d", ghistoryBits);
 
-  // BHR, branch history register, keeps track of global branch 
-  // taken or not.
-  // all initialized to N/not taken/0
-  int BHR_size = ghistoryBits;
-  BHR_tour = (int*)malloc(sizeof(int) * BHR_size);//  [ghistoryBits];
-  
-  for (int idx = 0; idx < BHR_size; idx++){
-    BHR_tour[idx] = WN;
-  } 
-
-  printf("k%dk\n", BHR_tour[0]);
-  // BHT/PHT, for local history
-  // all initialized to 0/NT
-  //[pcIndexBits][lhistoryBits];
-  int BHT_size = pow(2, pcIndexBits);
-  int loc_size = lhistoryBits;
-  BHT_tour = (int*)malloc(sizeof(int) * BHT_size); 
-  for (int idx = 0; idx < pcIndexBits; idx++){
-    BHT[idx] = malloc(sizeof(int) * loc_size);
+  // all addresses' indexes to BHT set to be 0 initially
+  for (int i = 0; i < BHT_size; i++){
+    BHT_index[i] = 0;
   }
-  */
-  
+
+  // The Choice Predictor used to select which predictor 
+  // should be initialized to Weakly select the Global Predictor.
+  // [0=SG, 1=WG, 2=WL, 3=SL], since 2-bit predictor
+  for (int i = 0; i < global_size; i++){
+    chooser[i] = 1;
+  }
+
 }
 
 uint8_t make_prediction_tournament(uint32_t pc){
