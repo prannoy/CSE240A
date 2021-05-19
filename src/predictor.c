@@ -38,10 +38,10 @@ int verbose;
 //
 //TODO: Add your own Branch Predictor data structures here
 //
-int* BHR_tour;      // array to keep track of global t/nt
+int* BHR;           // array to keep track of global t/nt
 int* BHT_global;    // 2^n array to keep track of global t/nt
 int* BHT_local;     // 2^n array to keep track of local t/nt
-int* chooser_tour;  // keeps track of chooser for each addr
+int* chooser;  // keeps track of chooser for each addr
 
 //------------------------------------//
 //        Predictor Functions         //
@@ -55,11 +55,28 @@ init_predictor()
   //
   //TODO: Initialize Branch Predictor Data Structures
   //
-  int global_size = pow(2, ghistoryBits);
-  int local_size = pow(2, lhistoryBits);
-  BHT_global = (int*)malloc(sizeof(int) * global_size);
-  BHT_local = (int*)malloc(sizeof(int) * local_size);
 
+  // the 'ghistoryBits' will be used to size the global and choice predictors
+  int global_size = pow(2, ghistoryBits);
+  BHT_global = (int*)malloc(sizeof(int) * global_size);
+  chooser = (int*)malloc(sizeof(int) * global_size);
+  
+  // the 'lhistoryBits' and 'pcIndexBits' will be used to size the local predictor.
+  int local_size = pow(2, lhistoryBits);
+  int BHR_size = pow(2, pcIndexBits);
+  BHT_local = (int*)malloc(sizeof(int) * local_size);
+  BHR = (int*)malloc(sizeof(int) * BHR_size);
+  
+  // All 2-bit predictors should be initialized to WN (Weakly Not Taken).
+  for (int i = 0; i < global_size; i++){
+    BHT_global[i] = WN;
+  }
+
+  for (int i = 0; i < local_size; i++){
+    BHT_global[i] = WN;
+  }
+
+  /*
   int mem_size = pow(2, ghistoryBits);
   chooser_tour = (int*)malloc(sizeof(int) * mem_size);
   printf("%d", ghistoryBits);
@@ -84,7 +101,7 @@ init_predictor()
   for (int idx = 0; idx < pcIndexBits; idx++){
     BHT[idx] = malloc(sizeof(int) * loc_size);
   }
-  
+  */
   
 }
 
