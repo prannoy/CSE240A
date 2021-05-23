@@ -115,6 +115,7 @@ main(int argc, char *argv[])
     num_branches++;
 
     // Make a prediction and compare with actual outcome
+    //DEBUG: printf("%" PRIu32 "\n", pc);
     uint8_t prediction = make_prediction(pc);
     if (prediction != outcome) {
       mispredictions++;
