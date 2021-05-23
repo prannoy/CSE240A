@@ -7,6 +7,7 @@
 //========================================================//
 #include <math.h>
 #include <stdio.h>
+#include <inttypes.h>
 #include "predictor.h"
 
 
@@ -56,10 +57,10 @@ init_predictor()
   //
   //TODO: Initialize Branch Predictor Data Structures
   //
-
+  
   // the 'ghistoryBits' will be used to size the global and choice predictors
   int global_size = pow(2, ghistoryBits);
-  G_hist = 0;
+  G_hist = 0; // index into table
   BHT_global = (int*)malloc(sizeof(int) * global_size);
   chooser = (int*)malloc(sizeof(int) * global_size);
   
@@ -75,7 +76,7 @@ init_predictor()
   }
 
   for (int i = 0; i < local_size; i++){
-    BHT_global[i] = WN;
+    BHT_local[i] = WN;
   }
 
 
@@ -90,12 +91,44 @@ init_predictor()
   for (int i = 0; i < global_size; i++){
     chooser[i] = 1;
   }
-
+  
 }
 
 uint8_t make_prediction_tournament(uint32_t pc){
-  printf("%d", pc);
+  printf("%" PRIu32 "\n", pc);
+  printf("in tournament");
   return TAKEN;
+  
+  // mod out index from pc, for local prediction
+  int local_mem_track = pow(2, lhistoryBits);
+  uint32_t local_index = pc % local_mem_track;
+  int BHT_idx = BHT_index[local_index];
+  int local_choice =  BHT_local[BHT_idx];
+
+
+  // global choice
+  int global_choice = BHT_global[G_hist];
+
+  int choose_idx = pc % (int)pow(2, ghistoryBits);
+  int choice = chooser[choose_idx];
+
+  if (choice <= 1){
+    // choice is SG or WG
+    if (global_choice == SN || global_choice == WN){
+      // predict not taken, as BHT predicts NT
+      return NOTTAKEN;
+    } else {
+      return TAKEN;
+    }
+  } else {
+    // choice is SL or WL
+    if (local_choice == SN || local_choice == WN){
+      // predict not taken, as BHT predicts NT
+      return NOTTAKEN;
+    } else {
+      return TAKEN;
+    }
+  }
 }
 
 // Make a prediction for conditional branch instruction at PC 'pc'
@@ -115,8 +148,9 @@ make_prediction(uint32_t pc)
       return TAKEN;
     case GSHARE:
     case TOURNAMENT:
-      //printf("tournament\n");
+      //printf("%" PRIu32 "\n", pc);
       return make_prediction_tournament(pc);
+      break;
     case CUSTOM:
     default:
       break;
